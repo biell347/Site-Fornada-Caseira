@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -91,6 +92,11 @@
 
         .btn-full { width: 100%; text-align: center; margin-top: 10px; }
 
+        textarea.form-input {
+            resize: none; /* Impede o usuário de esticar a caixa */
+            font-family: inherit; /* Mantém a mesma fonte */
+        }
+
     </style>
 </head>
 <body>
@@ -109,8 +115,10 @@
             </div>
 
             <h2 class="section-title">Os Mais Pedidos!</h2>
+            <div id="list-bakery"></div>
 
-            <div id="products-list"></div>
+            <h2 class="section-title">Bebidas</h2>
+            <div id="list-drinks"></div>
             
             <div style="height: 60px;"></div> </div>
 
@@ -176,56 +184,83 @@
                 </div>
             </div>
 
+            <div class="checkout-section">
+                <div class="checkout-title">📝 Alguma observação?</div>
+                <div class="form-group">
+                    <textarea id="order-obs" class="form-input" rows="3" placeholder="Ex:Sabor do suco, tocar a campainha, tirar a cebola, troco para 50..."></textarea>
+                </div>
+            </div>
+
             <button class="checkout-btn btn-full" onclick="finalizeOrder()">Enviar Pedido 🚀</button>
             <div style="height: 30px;"></div>
         </div>
     </div>
 
     <script>
-        // --- DADOS DOS PRODUTOS ---
+        // --- DADOS DOS PRODUTOS (Adicionei as bebidas aqui: IDs 4 e 5) ---
         const productsData = {
+            // PADARIA
             1: { name: "Pão de Queijo Recheado c/ Frango e Cream Cheese", price: 12.00, desc: "Peito de frango temperadinho com a textura aveludada do cream cheese.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQT6G0RX2Fzev-UAaEe0-AN8JM7mIhZFigBhg&s" },
             2: { name: "Tapioca Recheada com Carne de Sol", price: 12.00, desc: "Tapioca com carne de sol suculenta.", img: "https://www.estadao.com.br/resizer/5Zw-qnPCJ0_bAofF1naVCin0aKU=/arc-anglerfish-arc2-prod-estadao/public/QBHHRIQKYNE2PPSN32N2BASA4U.jpg" },
             3: { name: "Cuscuz com Carne de Sol e Queijo", price: 13.00, desc: "Carne de sol e queijo derretendo.", img: "https://receitatodahora.com.br/wp-content/uploads/2022/01/cuscuz-recheado-750x750.jpg" },
             4: { name: "Quiche de Frango Cremoso", price: 8.00, desc: "Massa perfeita e frango cremoso.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAd24Um1xMTrdY2wqjn4xdQZ1M8AMSB8siVg&s" },
             5: { name: "Misto Marguerita", price: 7.00, desc: "Queijo mussarela, presunto, tomate e manjeiricão", img: "https://www.galbani.com.br/wp-content/uploads/2025/02/shutterstock_1042237003-1.webp" },
             6: { name: "Bolo de Cenoura com Chocolate", price: 8.00, desc: "Fatia de bolo de cenoura tradicional, com cobertura de brigadeiro.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkMxre9pYCexiz4oAoEwQQ-ZN0waKnWEgiOA&s" },
-            7: { name: "Torta de limão", price: 12.00, desc: "Fatia de torta com base crocante, mousse de limão suave e cobertura de merengue tostado.", img: "https://cknj.com.br/teste/wp-content/uploads/2021/10/torta-de-limao-01-1200x1200.jpg" }
+            7: { name: "Torta de limão", price: 12.00, desc: "Fatia de torta com base crocante, mousse de limão suave e cobertura de merengue tostado.", img: "https://cknj.com.br/teste/wp-content/uploads/2021/10/torta-de-limao-01-1200x1200.jpg" },
+            
+            // BEBIDAS (Novos Itens)
+            8: { name: "Suco Natural", price: 8.00, desc: "Laranja, Maracujá, Cajá e Acerola.", img: "https://cantinagoodlanche.com.br/wp-content/uploads/2020/07/beneficios-dos-sucos-naturais-1-alfa-hotel.jpg" },
+            9: { name: "Vitamina", price: 12.00, desc: "O suco refrescante batido com leite integral.", img: "https://p2.trrsf.com/image/fget/cf/1200/900/middle/images.terra.com/2021/03/30/1825464006-shutterstock5577862151.jpg" },
+            10: { name: "Água Mineral", price: 5.00, desc: "Água Mineral.", img: "https://i0.wp.com/maprint.com.br/wp-content/uploads/2017/08/garrafa-de-agua-mineral-500ml.png?fit=400%2C400&ssl=1"}
+        };
+
+        // Configuração das categorias (Quais IDs vão em qual lugar)
+        const categories = {
+            'list-bakery': [1, 2, 3, 4, 5, 6, 7], // IDs da padaria
+            'list-drinks': [8, 9, 10]     // IDs das bebidas
         };
 
         let cart = {};
         let selectedPaymentMethod = null;
 
-        // --- INICIALIZAÇÃO ---
+        // --- INICIALIZAÇÃO MELHORADA ---
         function init() {
-            const list = document.getElementById('products-list');
-            for (let id in productsData) {
-                const p = productsData[id];
-                list.innerHTML += `
-                    <div class="product-card" id="prod-${id}">
-                        <img src="${p.img}" alt="${p.name}" class="product-img">
-                        <div class="product-info">
-                            <div>
-                                <div class="product-title">${p.name}</div>
-                                <div class="product-desc">${p.desc}</div>
-                            </div>
-                            <div class="product-footer">
-                                <div class="price">R$ ${p.price.toFixed(2).replace('.', ',')}</div>
-                                <button class="add-btn" onclick="addToCart(${id})">Adicionar</button>
-                                <div class="quantity-control">
-                                    <button class="quantity-btn" onclick="updateQty(${id}, -1)">-</button>
-                                    <span class="quantity-value" id="qty-${id}">0</span>
-                                    <button class="quantity-btn" onclick="updateQty(${id}, 1)">+</button>
+            // Loop pelas categorias definidas acima
+            for (const [containerId, ids] of Object.entries(categories)) {
+                const container = document.getElementById(containerId);
+                
+                // Para cada ID dentro dessa categoria
+                ids.forEach(id => {
+                    const p = productsData[id];
+                    // Gerar o HTML
+                    container.innerHTML += `
+                        <div class="product-card" id="prod-${id}">
+                            <img src="${p.img}" alt="${p.name}" class="product-img">
+                            <div class="product-info">
+                                <div>
+                                    <div class="product-title">${p.name}</div>
+                                    <div class="product-desc">${p.desc}</div>
+                                </div>
+                                <div class="product-footer">
+                                    <div class="price">R$ ${p.price.toFixed(2).replace('.', ',')}</div>
+                                    <button class="add-btn" onclick="addToCart(${id})">Adicionar</button>
+                                    <div class="quantity-control">
+                                        <button class="quantity-btn" onclick="updateQty(${id}, -1)">-</button>
+                                        <span class="quantity-value" id="qty-${id}">0</span>
+                                        <button class="quantity-btn" onclick="updateQty(${id}, 1)">+</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                });
             }
         }
+        
+        // Iniciar
         init();
 
-        // --- LÓGICA DO CARRINHO ---
+        // --- LÓGICA DO CARRINHO (Mantida igual, pois usa IDs) ---
         function addToCart(id) {
             cart[id] = 1;
             updateCardUI(id);
@@ -266,9 +301,8 @@
             }
         }
 
-        // --- NAVEGAÇÃO ENTRE TELAS ---
+        // --- NAVEGAÇÃO E CHECKOUT (Mantidos iguais) ---
         function goToCheckout() {
-            // Renderizar resumo
             const summaryList = document.getElementById('order-summary-list');
             summaryList.innerHTML = '';
             let total = 0;
@@ -286,27 +320,19 @@
                 `;
             }
 
-            // Calcular frete (Simples: Grátis > 30)
             const deliveryFee = total > 30 ? 0 : 5.00;
-            if(deliveryFee > 0) {
-                summaryList.innerHTML += `
-                    <div class="order-item" style="color: var(--text-gray);">
-                        <span>Taxa de Entrega</span>
-                        <span>R$ ${deliveryFee.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                `;
-            } else {
-                summaryList.innerHTML += `
-                    <div class="order-item" style="color: green;">
-                        <span>Taxa de Entrega</span>
-                        <span>GRÁTIS</span>
-                    </div>
-                `;
-            }
+            const deliveryText = deliveryFee === 0 ? "GRÁTIS" : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
+            const deliveryColor = deliveryFee === 0 ? "green" : "var(--text-gray)";
+
+            summaryList.innerHTML += `
+                <div class="order-item" style="color: ${deliveryColor};">
+                    <span>Taxa de Entrega</span>
+                    <span>${deliveryText}</span>
+                </div>
+            `;
 
             document.getElementById('checkout-total-value').innerText = (total + deliveryFee).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            // Trocar tela
             document.getElementById('screen-menu').classList.add('hidden');
             document.getElementById('screen-checkout').classList.remove('hidden');
             window.scrollTo(0,0);
@@ -317,18 +343,17 @@
             document.getElementById('screen-menu').classList.remove('hidden');
         }
 
-        // --- CHECKOUT LÓGICA ---
         function selectPayment(method, element) {
             selectedPaymentMethod = method;
-            // Remover selecionado anterior
             document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
-            // Adicionar novo
             element.classList.add('selected');
         }
 
         function finalizeOrder() {
             const street = document.getElementById('address-street').value;
             const number = document.getElementById('address-number').value;
+            const neighbor = document.getElementById('address-neighbor').value; // Pegando bairro também
+            const obs = document.getElementById('order-obs').value; // <--- Pegando a observação
             
             if (!street || !number) {
                 alert('Por favor, preencha o endereço!');
@@ -339,13 +364,21 @@
                 return;
             }
 
-            // Simulação de envio (Aqui você integraria com WhatsApp ou Backend)
-            alert(`✅ Pedido Recebido!\n\nEndereço: ${street}, ${number}\nPagamento: ${selectedPaymentMethod.toUpperCase()}`);
+            // Montando a mensagem final
+            let message = `✅ Pedido Recebido!\n\n`;
+            message += `📍 Endereço: ${street}, ${number} - ${neighbor}\n`;
+            message += `💳 Pagamento: ${selectedPaymentMethod.toUpperCase()}\n`;
             
-            // Opcional: Limpar carrinho e voltar
-            // cart = {}; 
-            // location.reload(); 
+            if(obs) {
+                message += `📝 Obs: ${obs}\n`;
+            }
+
+            alert(message);
+            
+            // Aqui você poderia redirecionar para o WhatsApp, por exemplo:
+            // window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`);
         }
     </script>
+    
 </body>
 </html>
