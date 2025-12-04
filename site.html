@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padaria Delivery - Checkout</title>
+    <style>
+        /* --- RESET E VARIÁVEIS --- */
+        :root {
+            --primary-color: #E23744;
+            --primary-dark: #C41C29;
+            --text-dark: #2D2D2D;
+            --text-gray: #777;
+            --bg-light: #F4F4F4;
+            --white: #FFFFFF;
+            --border-color: #EEEEEE;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-dark); padding-bottom: 100px; }
+        
+        /* Utilitários de Tela */
+        .screen { display: block; animation: fadeIn 0.3s ease-in-out; }
+        .hidden { display: none !important; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- TELA 1: MENU (Estilos Mantidos) --- */
+        .header-image { width: 100%; height: 200px; object-fit: cover; }
+        .container { padding: 0 15px; max-width: 600px; margin: 0 auto; position: relative;}
+        
+        /* Card Restaurante */
+        .restaurant-info { background: var(--white); padding: 20px; border-radius: 0 0 20px 20px; box-shadow: var(--shadow); margin-bottom: 20px; margin-top: -20px; position: relative; }
+        .restaurant-header { display: flex; justify-content: space-between; align-items: center; }
+        .restaurant-name { font-size: 1.5rem; font-weight: 700; }
+        .details { display: flex; gap: 15px; margin-top: 5px; font-size: 0.9rem; color: var(--text-gray); }
+        .promo-banner { border: 1px dashed var(--primary-color); color: var(--primary-color); padding: 10px; text-align: center; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; background-color: #FFF0F1; font-weight: 600; }
+
+        /* Lista de Produtos */
+        .section-title { font-size: 1.2rem; margin: 20px 0 15px 0; }
+        .product-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .product-img { width: 100px; height: 100px; border-radius: 10px; object-fit: cover; }
+        .product-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-weight: 600; font-size: 1.1rem; }
+        .product-desc { font-size: 0.8rem; color: var(--text-gray); margin-bottom: 10px; }
+        .product-footer { display: flex; justify-content: space-between; align-items: center; }
+        .price { font-weight: 700; font-size: 1.1rem; }
+
+        /* Botões */
+        .add-btn { background-color: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .quantity-control { display: flex; align-items: center; background: var(--white); border: 1px solid var(--border-color); border-radius: 6px; display: none; }
+        .quantity-btn { background: none; border: none; padding: 5px 12px; color: var(--primary-color); font-weight: bold; font-size: 1.2rem; cursor: pointer; }
+        .quantity-value { padding: 0 5px; font-size: 0.9rem; font-weight: 600; }
+        .card-active .add-btn { display: none; }
+        .card-active .quantity-control { display: flex; }
+
+        /* Rodapé Flutuante */
+        .sticky-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--white); padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); display: none; justify-content: space-between; align-items: center; z-index: 100; }
+        .cart-total { font-size: 1.2rem; font-weight: 800; }
+        .checkout-btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+
+        /* --- TELA 2: CHECKOUT (Novos Estilos) --- */
+        .checkout-header { display: flex; align-items: center; gap: 15px; padding: 20px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .back-btn { font-size: 1.5rem; cursor: pointer; color: var(--primary-color); background: none; border: none; }
+        
+        .checkout-section { background: var(--white); padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .checkout-title { font-size: 1rem; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        /* Resumo do Pedido */
+        .order-item { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
+        .order-total-row { display: flex; justify-content: space-between; margin-top: 15px; font-weight: 800; font-size: 1.1rem; color: var(--text-dark); border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* Formulários */
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 0.85rem; color: var(--text-gray); margin-bottom: 5px; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none; }
+        .form-input:focus { border-color: var(--primary-color); }
+        .form-row { display: flex; gap: 10px; }
+
+        /* Seleção de Pagamento */
+        .payment-options { display: flex; flex-direction: column; gap: 10px; }
+        .payment-option { border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
+        .payment-option.selected { border-color: var(--primary-color); background-color: #FFF0F1; }
+        .radio-circle { width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 50%; position: relative; }
+        .selected .radio-circle { border-color: var(--primary-color); }
+        .selected .radio-circle::after { content: ''; width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .btn-full { width: 100%; text-align: center; margin-top: 10px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="screen-menu" class="screen">
+        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=600&auto=format&fit=crop" alt="Pães" class="header-image">
+
+        <div class="container">
+            <div class="restaurant-info">
+                <div class="restaurant-header">
+                    <div class="restaurant-name">Fornada Caseira 🥖</div>
+                    <div style="color: var(--primary-color)">❤</div>
+                </div>
+                <div class="details"><span>⭐ 5.0 (500+)</span><span>•</span><span>30-45 min</span></div>
+                <div class="promo-banner">FRETE GRÁTIS ACIMA DE R$ 30</div>
+            </div>
+
+            <h2 class="section-title">Cardápio</h2>
+
+            <div id="products-list"></div>
+            
+            <div style="height: 60px;"></div> </div>
+
+        <div class="sticky-footer" id="cart-footer">
+            <div class="cart-info">
+                <span style="font-size: 0.8rem; color: #777;">Total sem taxa</span>
+                <span class="cart-total" id="total-price-menu">R$ 0,00</span>
+            </div>
+            <button class="checkout-btn" onclick="goToCheckout()">Continuar</button>
+        </div>
+    </div>
+
+    <div id="screen-checkout" class="screen hidden">
+        <div class="container">
+            <div class="checkout-header">
+                <button class="back-btn" onclick="goBack()">&#8592;</button>
+                <h2 style="font-size: 1.3rem;">Finalizar Pedido</h2>
+            </div>
+
+            <div class="checkout-section">
+                <div class="checkout-title">📄 Resumo do Pedido</div>
+                <div id="order-summary-list">
+                    </div>
+                <div class="order-total-row">
+                    <span>Total a pagar</span>
+                    <span id="checkout-total-value">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="checkout-section">
+                <div class="checkout-title">📍 Endereço de Entrega</div>
+                <div class="form-group">
+                    <label class="form-label">Rua / Avenida</label>
+                    <input type="text" id="address-street" class="form-input" placeholder="Ex: Av. Paulista">
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label">Número</label>
+                        <input type="tel" id="address-number" class="form-input" placeholder="123">
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" id="address-neighbor" class="form-input" placeholder="Centro">
+                    </div>
+                </div>
+            </div>
+
+            <div class="checkout-section">
+                <div class="checkout-title">💳 Forma de Pagamento</div>
+                <div class="payment-options">
+                    <div class="payment-option" onclick="selectPayment('pix', this)">
+                        <div class="radio-circle"></div>
+                        <span>Pix (Chave Aleatória)</span>
+                    </div>
+                    <div class="payment-option" onclick="selectPayment('card', this)">
+                        <div class="radio-circle"></div>
+                        <span>Cartão de Crédito (Entrega)</span>
+                    </div>
+                    <div class="payment-option" onclick="selectPayment('money', this)">
+                        <div class="radio-circle"></div>
+                        <span>Dinheiro / Troco</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="checkout-btn btn-full" onclick="finalizeOrder()">Enviar Pedido 🚀</button>
+            <div style="height: 30px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- DADOS DOS PRODUTOS ---
+        const productsData = {
+            1: { name: "Quiche de Frango Cremoso", price: 6.00, desc: "Quiche individual, massa amanteigada e recheio com creme de leite fresco.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAd24Um1xMTrdY2wqjn4xdQZ1M8AMSB8siVg&s" },
+            2: { name: "Porção de Pão de Queijo", price: 7.00, desc: "Pão de queijo tradicional (3 unidades grandes).", img: "https://s2-g1.glbimg.com/noE7AXl9lBu7Jt81GO1EtOg6G_4=/0x0:2000x1126/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_59edd422c0c84a879bd37670ae4f538a/internal_photos/bs/2023/d/u/HTT00WSRGO9z7eiSZMCg/pao-queijo-17-.jpg" },
+            3: { name: "Tapioca Recheada com Carne de Sol", price: 10.00, desc: "Farinha de tapioca, carne de sol desfiada", img: "https://www.estadao.com.br/resizer/5Zw-qnPCJ0_bAofF1naVCin0aKU=/arc-anglerfish-arc2-prod-estadao/public/QBHHRIQKYNE2PPSN32N2BASA4U.jpg" },
+            4: { name: "Bolo de Cenoura com Chocolate", price: 8.00, desc: "Fatia de bolo de cenoura tradicional, com cobertura de brigadeiro.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkMxre9pYCexiz4oAoEwQQ-ZN0waKnWEgiOA&s" },
+            5: { name: "Torta de limão", price: 6.00, desc: "Fatia de torta com base crocante e creme de limão.", img: "https://cknj.com.br/teste/wp-content/uploads/2021/10/torta-de-limao-01-1200x1200.jpg" }
+        };
+
+        let cart = {};
+        let selectedPaymentMethod = null;
+
+        // --- INICIALIZAÇÃO ---
+        function init() {
+            const list = document.getElementById('products-list');
+            for (let id in productsData) {
+                const p = productsData[id];
+                list.innerHTML += `
+                    <div class="product-card" id="prod-${id}">
+                        <img src="${p.img}" alt="${p.name}" class="product-img">
+                        <div class="product-info">
+                            <div>
+                                <div class="product-title">${p.name}</div>
+                                <div class="product-desc">${p.desc}</div>
+                            </div>
+                            <div class="product-footer">
+                                <div class="price">R$ ${p.price.toFixed(2).replace('.', ',')}</div>
+                                <button class="add-btn" onclick="addToCart(${id})">Adicionar</button>
+                                <div class="quantity-control">
+                                    <button class="quantity-btn" onclick="updateQty(${id}, -1)">-</button>
+                                    <span class="quantity-value" id="qty-${id}">0</span>
+                                    <button class="quantity-btn" onclick="updateQty(${id}, 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        init();
+
+        // --- LÓGICA DO CARRINHO ---
+        function addToCart(id) {
+            cart[id] = 1;
+            updateCardUI(id);
+            updateFooterUI();
+        }
+
+        function updateQty(id, change) {
+            if (!cart[id]) cart[id] = 0;
+            cart[id] += change;
+            if (cart[id] <= 0) {
+                delete cart[id];
+                document.getElementById(`prod-${id}`).classList.remove('card-active');
+            } else {
+                document.getElementById(`qty-${id}`).innerText = cart[id];
+            }
+            updateFooterUI();
+        }
+
+        function updateCardUI(id) {
+            document.getElementById(`prod-${id}`).classList.add('card-active');
+            document.getElementById(`qty-${id}`).innerText = cart[id];
+        }
+
+        function updateFooterUI() {
+            let total = 0;
+            let count = 0;
+            for (let id in cart) {
+                total += cart[id] * productsData[id].price;
+                count += cart[id];
+            }
+            
+            const footer = document.getElementById('cart-footer');
+            if (count > 0) {
+                footer.style.display = 'flex';
+                document.getElementById('total-price-menu').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            } else {
+                footer.style.display = 'none';
+            }
+        }
+
+        // --- NAVEGAÇÃO ENTRE TELAS ---
+        function goToCheckout() {
+            // Renderizar resumo
+            const summaryList = document.getElementById('order-summary-list');
+            summaryList.innerHTML = '';
+            let total = 0;
+
+            for (let id in cart) {
+                const p = productsData[id];
+                const subtotal = p.price * cart[id];
+                total += subtotal;
+                
+                summaryList.innerHTML += `
+                    <div class="order-item">
+                        <span>${cart[id]}x ${p.name}</span>
+                        <span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                `;
+            }
+
+            // Calcular frete (Simples: Grátis > 30)
+            const deliveryFee = total > 30 ? 0 : 5.00;
+            if(deliveryFee > 0) {
+                summaryList.innerHTML += `
+                    <div class="order-item" style="color: var(--text-gray);">
+                        <span>Taxa de Entrega</span>
+                        <span>R$ ${deliveryFee.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                `;
+            } else {
+                summaryList.innerHTML += `
+                    <div class="order-item" style="color: green;">
+                        <span>Taxa de Entrega</span>
+                        <span>GRÁTIS</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('checkout-total-value').innerText = (total + deliveryFee).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // Trocar tela
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-checkout').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function goBack() {
+            document.getElementById('screen-checkout').classList.add('hidden');
+            document.getElementById('screen-menu').classList.remove('hidden');
+        }
+
+        // --- CHECKOUT LÓGICA ---
+        function selectPayment(method, element) {
+            selectedPaymentMethod = method;
+            // Remover selecionado anterior
+            document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+            // Adicionar novo
+            element.classList.add('selected');
+        }
+
+        function finalizeOrder() {
+            const street = document.getElementById('address-street').value;
+            const number = document.getElementById('address-number').value;
+            
+            if (!street || !number) {
+                alert('Por favor, preencha o endereço!');
+                return;
+            }
+            if (!selectedPaymentMethod) {
+                alert('Selecione uma forma de pagamento!');
+                return;
+            }
+
+            // Simulação de envio (Aqui você integraria com WhatsApp ou Backend)
+            alert(`✅ Pedido Recebido!\n\nEndereço: ${street}, ${number}\nPagamento: ${selectedPaymentMethod.toUpperCase()}`);
+            
+            // Opcional: Limpar carrinho e voltar
+            // cart = {}; 
+            // location.reload(); 
+        }
+    </script>
+</body>
+</html>
